@@ -38,15 +38,11 @@ print('test_dataset X{} -> y{}'.format(test_dataset.X.shape, test_dataset.y.shap
 
 metric = dc.metrics.Metric(dc.metrics.pearson_r2_score)
 print(metric.name)
-print(dir(metric))
 
 model = AtomicConvModel(batch_size=batch_size,
                         frag1_num_atoms=frag1_num_atoms,
                         frag2_num_atoms=frag2_num_atoms,
                         epochs=epochs)
-
-import sys
-sys.exit(0)
 
 print('Fitting model on train dataset')
 model.fit(train_dataset)
