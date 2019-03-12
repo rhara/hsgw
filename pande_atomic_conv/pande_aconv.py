@@ -178,30 +178,6 @@ class AnalyticMol:
 
         return AnalyticMol(mol, **kwargs)
 
-def parse_cmdline(argv):
-    prog = os.path.abspath(argv.pop(0))
-    args = []
-    opts = {'ligand_fname': None, 'protein_fname': None, 'out_fname': 'out.npz'}
-    while argv:
-        v = argv.pop(0)
-        if v == '-l' or v == '--ligand':
-            opts['ligand_fname'] = argv.pop(0)
-            continue
-        if v == '-p' or v == '--protein':
-            opts['protein_fname'] = argv.pop(0)
-            continue
-        if v == '-o' or v == '--out':
-            opts['out_fname'] = argv.pop(0)
-            continue
-        args.append(v)
-    if len(args) == 2:
-        opts['ligand_fname'], opts['protein_fname'] = args
-    assert opts['ligand_fname']
-    assert opts['protein_fname']
-    assert opts['out_fname']
-
-    return prog, args, opts
-
 def main():
     print(f'{os.path.abspath(sys.argv[0])} {__VERSION__}')
     parser = argparse.ArgumentParser(description='Pande 2017')
@@ -225,24 +201,24 @@ def main():
           f'{analytic_complex.mol.GetNumAtoms()}')
 
     print('ligand', end=' ')
-    KR_ligand = analytic_ligand.getConvolution(padding=ligand_size)
-    print(KR_ligand.shape)
+    E_ligand = analytic_ligand.getConvolution(padding=ligand_size)
+    print(E_ligand.shape)
 
     print('protein', end=' ')
-    KR_protein = analytic_protein.getConvolution(padding=protein_size)
-    print(KR_protein.shape)
+    E_protein = analytic_protein.getConvolution(padding=protein_size)
+    print(E_protein.shape)
 
     print('complex', end=' ')
-    KR_complex = analytic_complex.getConvolution(padding=ligand_size+protein_size)
-    print(KR_complex.shape)
+    E_complex = analytic_complex.getConvolution(padding=ligand_size+protein_size)
+    print(E_complex.shape)
 
     T = time.time()
     np.savez(args.out,
              ligand_file=args.ligand,
              protein_file=args.out,
-             KR_ligand=KR_ligand,
-             KR_protein=KR_protein,
-             KR_complex=KR_complex)
+             E_ligand=E_ligand,
+             E_protein=E_protein,
+             E_complex=E_complex)
     print(f'Elapsed: {T-t:.2f}s, written to {args.out}')
 
 if __name__ == '__main__':
