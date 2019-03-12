@@ -1,2 +1,6 @@
 .ipynb_checkpoints/
 Untitled.ipynb
+*.aux
+*.dvi
+*.log
+*.cif
