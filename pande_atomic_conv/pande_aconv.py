@@ -1,8 +1,9 @@
 import sys, os, math, time
+import argparse
 from rdkit import Chem
 import numpy as np
 
-__VERSION__ = '0.1'
+__VERSION__ = '0.1.2'
 
 np.set_printoptions(precision=3, threshold=np.inf, linewidth=200)
 
@@ -201,53 +202,48 @@ def parse_cmdline(argv):
 
     return prog, args, opts
 
-prog, args, opts = parse_cmdline(sys.argv)
-print(prog)
+def main():
+    print(f'{os.path.abspath(sys.argv[0])} {__VERSION__}')
+    parser = argparse.ArgumentParser(description='Pande 2017')
+    parser.add_argument('--ligand', '-l', type=str, help='Ligand file')
+    parser.add_argument('--protein', '-p', type=str, help='Protein file')
+    parser.add_argument('--out', '-o', type=str, default='out.npz', help='Output file')
+    args = parser.parse_args()
 
-t = time.time()
+    t = time.time()
 
-analytic_ligand = AnalyticMol.FromFile(opts['ligand_fname'])
-analytic_protein = AnalyticMol.FromFile(opts['protein_fname'])
-analytic_complex = AnalyticMol.FromMolCombination(analytic_ligand.mol, analytic_protein.mol)
+    analytic_ligand = AnalyticMol.FromFile(args.ligand)
+    analytic_protein = AnalyticMol.FromFile(args.protein)
+    analytic_complex = AnalyticMol.FromMolCombination(analytic_ligand.mol, analytic_protein.mol)
 
-ligand_size = 70
-protein_size = 12000
+    ligand_size = 70
+    protein_size = 12000
 
-print('Atoms: '
-      f'{analytic_ligand.mol.GetNumAtoms()}/'
-      f'{analytic_protein.mol.GetNumAtoms()}/'
-      f'{analytic_complex.mol.GetNumAtoms()}')
+    print('Atoms: '
+          f'{analytic_ligand.mol.GetNumAtoms()}/'
+          f'{analytic_protein.mol.GetNumAtoms()}/'
+          f'{analytic_complex.mol.GetNumAtoms()}')
 
-print('ligand', end=' ')
-KR_ligand = analytic_ligand.getConvolution(padding=ligand_size)
-print(KR_ligand.shape)
-# print(KR_ligand)
-# P_ligand = analytic_ligand.getRadialPoolingLayer(r_s=1.75, sigma_s=0.8)
-# print(P_ligand.shape)
-# print(P_ligand)
+    print('ligand', end=' ')
+    KR_ligand = analytic_ligand.getConvolution(padding=ligand_size)
+    print(KR_ligand.shape)
 
-print('protein', end=' ')
-KR_protein = analytic_protein.getConvolution(padding=protein_size)
-print(KR_protein.shape)
-# print(KR_protein)
-# # P_protein = analytic_protein.getRadialPoolingLayer(r_s=1.75, sigma_s=0.8)
-# # print(P_protein.shape)
-# # print(P_protein)
-# 
-print('complex', end=' ')
-KR_complex = analytic_complex.getConvolution(padding=ligand_size+protein_size)
-print(KR_complex.shape)
-# print(KR_complex)
-# # P_complex = analytic_complex.getRadialPoolingLayer(r_s=1.75, sigma_s=0.8)
-# # print(P_complex.shape)
-# # print(P_complex)
+    print('protein', end=' ')
+    KR_protein = analytic_protein.getConvolution(padding=protein_size)
+    print(KR_protein.shape)
 
-T = time.time()
-oname = opts['out_fname']
-np.savez(oname,
-         ligand_file=opts['ligand_fname'],
-         protein_file=opts['protein_fname'],
-         KR_ligand=KR_ligand,
-         KR_protein=KR_protein,
-         KR_complex=KR_complex)
-print(f'Elapsed: {T-t:.2f}s, written to {oname}')
+    print('complex', end=' ')
+    KR_complex = analytic_complex.getConvolution(padding=ligand_size+protein_size)
+    print(KR_complex.shape)
+
+    T = time.time()
+    np.savez(args.out,
+             ligand_file=args.ligand,
+             protein_file=args.out,
+             KR_ligand=KR_ligand,
+             KR_protein=KR_protein,
+             KR_complex=KR_complex)
+    print(f'Elapsed: {T-t:.2f}s, written to {args.out}')
+
+if __name__ == '__main__':
+    main()
