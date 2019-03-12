@@ -1,0 +1,66 @@
+\documentclass{jarticle}
+\begin{document}
+\thispagestyle{empty}
+
+長谷川様、
+
+\vspace{1cm}
+
+Pandeの論文(\texttt{https://arxiv.org/abs/1703.10603})の追試に四苦八苦しています。
+
+\begin{enumerate}
+  \item Distance matrix and neighbor list construction
+  \vspace{-3mm}
+  \item Atom type convolution
+  \vspace{-3mm}
+  \item Radial pooling layer
+  \vspace{-3mm}
+  \item Atomistic fully connected network
+\end{enumerate}
+
+のうち、1.、2.は簡単で高速な処理をnumpyで実装しました。
+
+\[
+E_{i,j,n_a} = (K^a*R)_{i,j}
+\]
+
+この式では$E$のshapeは$(N, M, N_{\mathrm{at}})$となりますが、
+分子の大きさに依存しないよう、axis $=0$方向にpaddingを加えています。
+コード\texttt{pande\_aconv.py}の中では以下の部分になります。
+
+\begin{verbatim}
+analytic_ligand = AnalyticMol.FromFile(args.ligand)
+ligand_size = 70
+E_ligand = analytic_ligand.getConvolution(padding=ligand_size)
+\end{verbatim}
+
+【質問】AtomicConvolutionの初期フィーチャーである$E(N, M, N_{\textrm{at}})$を
+多くのリガンド:蛋白で蓄積して
+データセット$X(-1, N, M, N_{\textrm{at}})$を用意することはできます。
+ここからdeepchem/tensorflowに依存しないで、機械学習のシステムは構築できますでしょうか？
+\vspace{.5cm}
+
+3.のpoolingのところは論文内の記述も不備で、
+ましてやradial cutoff関数$f_c(r_{i,j})$も明らかに間違いです。
+
+\begin{eqnarray}
+  f_c(r_{i,j}) = \left\{
+      \begin{array}{ll}
+      \frac12\left(\cos\left(\frac{\pi r_{i,j}}{R_c}\right) + 1\right) & 0 < r_{i,j} < R_c \\
+      0 & r_{i,j} \geq R_c \\
+      \end{array} \right.
+\end{eqnarray}
+
+shape $(N, N_{\mathrm{at}}, N_r)$のテンソル$P$を計算する手法はわかりましたが、
+スケーリングの$\beta_{n_r}$やバイアス$b_{n_r}$の設定がわかりません。
+また、radial symmetry関数 (プーリング関数) $f_s(r_{i,j})$中の$r_s$と$\sigma_s$は学習パラメータなのですが、
+どのように取り扱うべきなのかまだよくわかっていません。
+論文中の以下の表記は明らかに誤解を与える表現です。
+
+\begin{quote}
+Parameter $R_c$ is the radial interaction cutoff, which is fixed to 12 \AA.
+\end{quote}
+
+実際には、コードではradialの等差数列$[1.5, 2.0, 2.5, ..., 11.5, 12.0]$です。
+
+\end{document}
