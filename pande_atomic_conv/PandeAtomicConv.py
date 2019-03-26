@@ -1,5 +1,6 @@
 from rdkit import Chem
 import numpy as np
+from Timer import Timer
 
 class Featurizer:
     def __init__(self, mol, **kwargs):
@@ -71,7 +72,12 @@ class Featurizer:
         Nr = len(radials)
 
         self.P = np.zeros([N, Na, Nr])
+        timer = Timer(dt=5.0)
+        print('-'*20)
         for i in range(Nr):
+            if timer.check():
+                r = radials[i]
+                print(f'{timer.elapsed():6.2f}s radial={r:4.1f}')
             cutoff = radials[i]
             r0_list = np.zeros(Na)
             v0 = beta[i]*np.sum(fs(r0_list, cutoff)) + bias[i]
@@ -82,3 +88,5 @@ class Featurizer:
                         self.P[j, k, i] = v0
                     else:
                         self.P[j, k, i] = beta[i]*np.sum(fs(r_list, cutoff)) + bias[i]
+        print(f'{timer.elapsed():6.2f}s Done')
+
