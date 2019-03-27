@@ -1,6 +1,8 @@
 .ipynb_checkpoints/
 Untitled.ipynb
+__pycache__/
 *.aux
 *.dvi
 *.log
 *.cif
+*.pdf
