@@ -7,10 +7,17 @@ import sys, os, math, time
 import argparse
 from rdkit import Chem
 import numpy as np
+# import pandas as pd
 
 __VERSION__ = '0.1.3'
 
-np.set_printoptions(precision=3, threshold=np.inf, linewidth=200)
+np.set_printoptions(precision=3, threshold=np.inf, linewidth=np.inf)
+
+
+parser = argparse.ArgumentParser(description='Convert molecule file')
+parser.add_argument('--ligand', '-l', type=str, help='Ligand file')
+parser.add_argument('--protein', '-p', type=str, help='Potein file')
+args = parser.parse_args()
 
 
 """
@@ -34,8 +41,8 @@ import numpy as np
 
 from rdkit import Chem
 
-ligand_fname = 'data/1aaq_ligand.sdf'
-protein_fname = 'data/1aaq_protein.pdb'
+ligand_fname = args.ligand
+protein_fname = args.protein
 
 for mol_ligand in Chem.SDMolSupplier(ligand_fname): break
 mol_protein = Chem.MolFromPDBFile(protein_fname)
@@ -91,3 +98,4 @@ featurizer_P.setRadialLayer(beta=beta, bias=bias, r_s=r_s, sigma_s=sigma_s, radi
 featurizer_C.setRadialLayer(beta=beta, bias=bias, r_s=r_s, sigma_s=sigma_s, radials=radials)
 
 print(f'Radial pooling layer P.shape: L:{featurizer_L.P.shape}, P:{featurizer_P.P.shape}, C:{featurizer_C.P.shape}')
+
