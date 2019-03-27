@@ -1,5 +1,6 @@
 """
-## Pande Atomic Conv -- Not completed yet --
+## Modified Atomic Conv for Complex
+## Featurizer to make up to radial pooling is implemented
 """
 
 
