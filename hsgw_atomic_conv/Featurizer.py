@@ -117,6 +117,5 @@ class ComplexFeaturizer:
                         self.P[j, k, i] = beta[i]*np.sum(fs(r_list, cutoff)) + bias[i]
 
     def save(self, fname):
-        print(self.attrList)
         args = {k: getattr(self, k) for k in self.attrList}
         np.savez(fname, **args)

@@ -27,7 +27,7 @@ mol_protein = Chem.MolFromPDBFile(args.protein)
 print(f'{mol_ligand.GetNumAtoms()}, {mol_protein.GetNumAtoms()}')
 
 timer = Timer()
-featurizer = ComplexFeaturizer(M=12)
+featurizer = ComplexFeaturizer(M=24)
 featurizer(mol_ligand, mol_protein)
 lap = timer.elapsed()
 R, Z, E, P = featurizer.R, featurizer.Z, featurizer.E, featurizer.P
