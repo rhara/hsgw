@@ -186,6 +186,7 @@ def main():
     parser.add_argument('--protein', '-p', type=str, required=True, help='Potein file')
     parser.add_argument('--neighbor-size', '-M', type=int, default=12, help='Neighbor size')
     parser.add_argument('--radials-setup', '-R', type=str, default='1.5 12.0 0.5', help='Radials setup')
+    parser.add_argument('--output', '-o', type=str, default='out.npz', help='Output file')
     args = parser.parse_args()
 
     rmin, rmax, rint = map(float,args.radials_setup.split())
@@ -211,7 +212,7 @@ def main():
     print(f'Shapes: R:{R.shape}, Z:{Z.shape}, E:{E.shape}, P:{P.shape}')
     print(f'{lap:.2f}s')
 
-    featurizer.save('out.npz')
+    featurizer.save(args.output)
 
 
 if __name__ == '__main__':
