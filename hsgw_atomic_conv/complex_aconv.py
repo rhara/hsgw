@@ -1,33 +1,18 @@
 """
 Atomic Conv for Complex inspired by Pande
 """
-__VERSION__ = '0.1.0'
+__VERSION__ = '0.2.0'
 __AUTHOR__ = 'hara.ryuichiro@gmail.com'
 
-
-import argparse, time
+import sys, argparse, time, os, signal
 from rdkit import Chem
+from rdkit import RDLogger
 import numpy as np
+import multiprocessing as mp
+
+signal.signal(signal.SIGINT, lambda signum, frame: sys.exit(-1))
 
 np.set_printoptions(precision=3, threshold=np.inf, linewidth=300)
-
-
-class Timer:
-    def __init__(self, dt=10.0):
-        self.dt = dt
-        self.T0 = time.time()
-        self.T = self.T0
-
-    def check(self):
-        ret = False
-        t = time.time()
-        if self.dt < t - self.T:
-            self.T += self.dt
-            ret = True
-        return ret
-
-    def elapsed(self):
-        return time.time() - self.T0
 
 class ComplexFeaturizer:
     """
@@ -174,46 +159,71 @@ class ComplexFeaturizer:
         Save attributes in npz format
         """
 
-        args = {k: getattr(self, k) for k in self.attrList}
-        np.savez(fname, **args)
-        print(f'Saved in {fname}')
+        np.savez(fname, **vars(self))
+
+
+def worker(par):
+    for ligand in Chem.SDMolSupplier(par.sdfname): break
+    protein = Chem.MolFromPDBFile(par.pdbname)
+
+    if not (ligand and protein):
+        return par, None
+
+    featurizer = ComplexFeaturizer(M=par.neighbor_size,
+                                   radial_min=par.rmin,
+                                   radial_max=par.rmax,
+                                   radial_intv=par.rint)
+
+    featurizer(ligand, protein)
+
+    return par, featurizer
+
+    # featurizer.save(args.output)
 
 
 def main():
+    lg = RDLogger.logger()
+    lg.setLevel(RDLogger.CRITICAL)
+
     parser = argparse.ArgumentParser(description='Convert pair of bound-complex molecules into '
                                                  'Pande-type atomic conv pooling layer')
-    parser.add_argument('--ligand', '-l', type=str, required=True, help='Ligand file')
-    parser.add_argument('--protein', '-p', type=str, required=True, help='Potein file')
+    parser.add_argument('basedir', type=str, help='Base directory to find dataset')
     parser.add_argument('--neighbor-size', '-M', type=int, default=12, help='Neighbor size')
     parser.add_argument('--radials-setup', '-R', type=str, default='1.5 12.0 0.5', help='Radials setup')
     parser.add_argument('--output', '-o', type=str, default='out.npz', help='Output file')
     args = parser.parse_args()
 
-    rmin, rmax, rint = map(float,args.radials_setup.split())
+    args.rmin, args.rmax, args.rint = map(float, args.radials_setup.split())
 
-    ligand_fname = args.ligand
-    protein_fname = args.protein
+    def data_iter():
+        for root, dir, fnames in os.walk(args.basedir):
+            par = argparse.Namespace(**vars(args))
+            SDFNAME = None
+            PDBNAME = None
+            for fname in fnames:
+                if fname.endswith('.sdf'):
+                    SDFNAME = fname
+                elif fname.endswith('.pdb'):
+                    PDBNAME = fname
+            if PDBNAME and SDFNAME:
+                args.pdbname = os.path.abspath(f'{root}/{PDBNAME}')
+                args.sdfname = os.path.abspath(f'{root}/{SDFNAME}')
+                args.root = os.path.basename(os.path.abspath(root))
+                yield args
 
-    for mol_ligand in Chem.SDMolSupplier(args.ligand): break
-    mol_protein = Chem.MolFromPDBFile(args.protein)
 
-    print(f'{mol_ligand.GetNumAtoms()}, {mol_protein.GetNumAtoms()}')
 
-    timer = Timer()
-    featurizer = ComplexFeaturizer(M=args.neighbor_size,
-                                   radial_min=rmin,
-                                   radial_max=rmax,
-                                   radial_intv=rint)
-    print(f'radials={featurizer.radials}')
-    featurizer(mol_ligand, mol_protein)
-    lap = timer.elapsed()
-    R, Z, E, P = featurizer.R, featurizer.Z, featurizer.E, featurizer.P
+    pool = mp.Pool(mp.cpu_count())
 
-    print(f'Shapes: R:{R.shape}, Z:{Z.shape}, E:{E.shape}, P:{P.shape}')
-    print(f'{lap:.2f}s')
-
-    featurizer.save(args.output)
-
+    count = 0
+    feats = []
+    for par, feat in pool.imap_unordered(worker, data_iter()):
+        if feat:
+            count += 1
+            print(f'{count} {par.root} => R:{feat.R.shape}, Z:{feat.Z.shape}, E:{feat.E.shape}, P:{feat.P.shape}')
+            feats.append(feat)
+        else:
+            print(f'[Warning] {par.root} skipped for invalid molecule')
 
 if __name__ == '__main__':
     main()
