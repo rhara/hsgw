@@ -6,5 +6,5 @@ J. Gomes, B. Ramsundar, E.N. Feinberg, V.S. Pande, "Atomic Convolutional Network
 arXiv:1703.10603v1 (30 Mar 2017)
 
 ```
-python pande_aconv.py -l ligand.sdf -p protein.sdf -o out.npz
+python pande_aconv.py -l ligand.sdf -p protein.pdb -o out.npz
 ```
